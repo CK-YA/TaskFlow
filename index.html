@@ -1,0 +1,1284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    
+    <link rel="icon" href="/coolfav.png" type="image/png" />
+    
+  <meta property="og:title" content="TaskFlow — Your minimalist task manager" />
+  <meta property="og:description" content="listen to banger do shit task" />
+  <meta property="og:image" content="favicon.png" />
+    
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TaskFlow | No BullShit</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --text: #e5e5e5;
+            --primary: #00ff88;
+            --primary-light: rgba(0, 255, 136, 0.2);
+            --secondary: #333;
+            --card-bg: #111;
+            --input-bg: #1a1a1a;
+            --shadow: 0 8px 32px rgba(0, 255, 136, 0.15);
+            --error: #ff4444;
+            --glitch: #ff00ff;
+        }
+
+        [data-theme="light"] {
+            --bg: #f5f5f5;
+            --text: #333;
+            --primary: #007bff;
+            --primary-light: rgba(0, 123, 255, 0.2);
+            --secondary: #ddd;
+            --card-bg: #fff;
+            --input-bg: #f0f0f0;
+            --shadow: 0 8px 32px rgba(0, 123, 255, 0.15);
+            --error: #ff4444;
+            --glitch: #ff0066;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            min-height: 100vh;
+            transition: all 0.3s ease;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeInUp 0.8s ease-out forwards;
+        }
+
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            position: relative;
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            font-weight: 400;
+            color: var(--primary);
+            position: relative;
+            display: inline-block;
+        }
+
+        h1::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: var(--primary);
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform 0.6s cubic-bezier(0.19, 1, 0.22, 1);
+        }
+
+        h1:hover::after {
+            transform: scaleX(1);
+        }
+
+        .clock {
+            font-size: 0.9rem;
+            font-weight: 400;
+            background: var(--card-bg);
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            border: 1px solid var(--secondary);
+            animation: pulse 2s infinite;
+            transition: all 0.3s ease;
+        }
+
+        .clock:hover {
+            transform: scale(1.05);
+            box-shadow: var(--shadow);
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+
+        .clock-digit {
+            display: inline-block;
+            transition: all 0.3s ease;
+        }
+
+        .clock-digit.flip {
+            transform: rotateX(90deg);
+        }
+
+        .user-menu {
+            position: relative;
+        }
+
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid var(--primary);
+            transition: all 0.3s ease;
+            object-fit: cover;
+        }
+
+        .user-avatar:hover {
+            transform: scale(1.1);
+            box-shadow: var(--shadow);
+        }
+
+        .dropdown {
+            position: absolute;
+            right: 0;
+            top: 50px;
+            background: var(--card-bg);
+            border: 1px solid var(--secondary);
+            border-radius: 6px;
+            padding: 1rem;
+            width: 200px;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.3s ease;
+            z-index: 10;
+            transform: translateY(-10px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .dropdown.active {
+            opacity: 1;
+            pointer-events: all;
+            transform: translateY(0);
+        }
+
+        .dropdown-item {
+            padding: 0.5rem 0;
+            cursor: pointer;
+            transition: color 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .dropdown-item:hover {
+            color: var(--primary);
+        }
+
+        .dropdown-divider {
+            height: 1px;
+            background: var(--secondary);
+            margin: 0.5rem 0;
+        }
+
+        .auth-buttons {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .auth-btn {
+            background: var(--card-bg);
+            border: 1px solid var(--secondary);
+            color: var(--text);
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-family: inherit;
+        }
+
+        .auth-btn:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow);
+        }
+
+        .auth-form {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--card-bg);
+            border: 1px solid var(--primary);
+            border-radius: 6px;
+            padding: 2rem;
+            width: 90%;
+            max-width: 400px;
+            z-index: 1000;
+            box-shadow: var(--shadow);
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.3s ease;
+        }
+
+        .auth-form.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .auth-form h2 {
+            margin-bottom: 1.5rem;
+            text-align: center;
+            color: var(--primary);
+        }
+
+        .auth-form input {
+            width: 100%;
+            padding: 0.8rem;
+            margin-bottom: 1rem;
+            background: var(--input-bg);
+            border: 1px solid var(--secondary);
+            border-radius: 6px;
+            color: var(--text);
+            font-family: inherit;
+        }
+
+        .auth-form input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: var(--shadow);
+        }
+
+        .form-actions {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 1.5rem;
+        }
+
+        .close-form {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: none;
+            border: none;
+            color: var(--text);
+            cursor: pointer;
+            font-size: 1.2rem;
+        }
+
+        .task-input-container {
+            position: relative;
+            margin-bottom: 2rem;
+        }
+
+        .task-input {
+            width: 100%;
+            padding: 1rem;
+            background: var(--input-bg);
+            border: 1px solid var(--secondary);
+            border-radius: 6px;
+            color: var(--text);
+            font-family: inherit;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(5px);
+        }
+
+        .task-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: var(--shadow);
+            transform: translateY(-2px);
+        }
+
+        .task-input::placeholder {
+            color: #888;
+        }
+
+        .add-btn {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: transparent;
+            border: none;
+            color: var(--primary);
+            cursor: pointer;
+            font-size: 1.2rem;
+            transition: all 0.3s ease;
+        }
+
+        .add-btn:hover {
+            transform: translateY(-50%) scale(1.2);
+        }
+
+        .task-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .task-item {
+            background: var(--card-bg);
+            border: 1px solid var(--secondary);
+            border-radius: 6px;
+            padding: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            transition: all 0.3s ease;
+            animation: fadeIn 0.5s ease forwards;
+            position: relative;
+            overflow: hidden;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .task-item:hover {
+            border-color: var(--primary);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow);
+        }
+
+        .task-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--primary), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .task-item:hover::before {
+            left: 100%;
+        }
+
+        .task-checkbox {
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border: 1px solid var(--secondary);
+            border-radius: 4px;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .task-checkbox:checked {
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+
+        .task-checkbox:checked::after {
+            content: '✓';
+            position: absolute;
+            color: var(--bg);
+            font-size: 0.7rem;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .task-text {
+            flex: 1;
+            word-break: break-word;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .task-text.completed {
+            text-decoration: line-through;
+            color: #888;
+        }
+
+        .task-delete {
+            background: transparent;
+            border: none;
+            color: var(--error);
+            cursor: pointer;
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+
+        .task-item:hover .task-delete {
+            opacity: 1;
+            transform: scale(1.1);
+        }
+
+        .sync-status {
+            margin-top: 2rem;
+            padding: 0.5rem 1rem;
+            background: var(--card-bg);
+            border: 1px solid var(--secondary);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .sync-status:hover {
+            border-color: var(--primary);
+            transform: translateY(-2px);
+        }
+
+        .sync-toggle {
+            position: relative;
+            width: 36px;
+            height: 18px;
+            appearance: none;
+            background: #555;
+            border-radius: 9px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .sync-toggle:checked {
+            background: var(--primary);
+        }
+
+        .sync-toggle::before {
+            content: '';
+            position: absolute;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #fff;
+            top: 2px;
+            left: 2px;
+            transition: all 0.3s ease;
+        }
+
+        .sync-toggle:checked::before {
+            left: 20px;
+        }
+
+        .sync-text {
+            flex: 1;
+            font-size: 0.8rem;
+        }
+
+        .theme-toggle {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--card-bg);
+            border: 1px solid var(--secondary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            z-index: 100;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .theme-toggle:hover {
+            border-color: var(--primary);
+            transform: rotate(30deg) scale(1.1);
+            box-shadow: var(--shadow);
+        }
+
+        .focus-timer {
+            margin-top: 2rem;
+            padding: 1.5rem;
+            background: var(--card-bg);
+            border: 1px solid var(--secondary);
+            border-radius: 6px;
+            text-align: center;
+            transition: all 0.3s ease;
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeInUp 0.8s ease-out 0.2s forwards;
+        }
+
+        .focus-timer:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow);
+        }
+
+        .timer-display {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            color: var(--primary);
+            font-weight: 400;
+        }
+
+        .timer-controls {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .timer-btn {
+            background: var(--input-bg);
+            border: 1px solid var(--secondary);
+            color: var(--text);
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        .timer-btn:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+            transform: translateY(-2px);
+        }
+
+        .timer-btn:active {
+            transform: translateY(0);
+        }
+
+        .timer-settings {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .timer-input {
+            width: 60px;
+            padding: 0.5rem;
+            background: var(--input-bg);
+            border: 1px solid var(--secondary);
+            border-radius: 4px;
+            color: var(--text);
+            text-align: center;
+            font-family: inherit;
+        }
+
+        .timer-input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .progress-bar {
+            height: 4px;
+            background: var(--secondary);
+            border-radius: 2px;
+            margin-top: 1rem;
+            overflow: hidden;
+        }
+
+        .progress {
+            height: 100%;
+            background: var(--primary);
+            width: 0%;
+            transition: width 1s linear;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--card-bg);
+            border: 1px solid var(--primary);
+            border-radius: 6px;
+            padding: 1rem;
+            color: var(--primary);
+            box-shadow: var(--shadow);
+            transform: translateX(200%);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+        }
+
+        .notification.error {
+            border-color: var(--error);
+            color: var(--error);
+            animation: glitch 0.5s linear;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        @keyframes glitch {
+            0% { text-shadow: 0.05em 0 0 var(--glitch), -0.05em -0.025em 0 var(--error); }
+            14% { text-shadow: 0.05em 0 0 var(--glitch), -0.05em -0.025em 0 var(--error); }
+            15% { text-shadow: -0.05em -0.025em 0 var(--glitch), 0.025em 0.025em 0 var(--error); }
+            49% { text-shadow: -0.05em -0.025em 0 var(--glitch), 0.025em 0.025em 0 var(--error); }
+            50% { text-shadow: 0.025em 0.05em 0 var(--glitch), 0.05em 0 0 var(--error), 0 -0.05em 0 var(--primary); }
+            99% { text-shadow: 0.025em 0.05em 0 var(--glitch), 0.05em 0 0 var(--error), 0 -0.05em 0 var(--primary); }
+            100% { text-shadow: -0.025em 0 0 var(--glitch), -0.025em -0.025em 0 var(--error); }
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 999;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.3s ease;
+        }
+
+        .overlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        @media (max-width: 600px) {
+            header {
+                flex-direction: column;
+                gap: 1rem;
+                align-items: flex-start;
+            }
+
+            .clock {
+                align-self: flex-end;
+            }
+
+            .auth-buttons {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="notification" id="notification"></div>
+    <div class="overlay" id="overlay"></div>
+
+    <!-- Auth Forms -->
+    <div class="auth-form" id="loginForm">
+        <button class="close-form" id="closeLoginForm"><i class="fas fa-times"></i></button>
+        <h2>Login</h2>
+        <input type="email" id="loginEmail" placeholder="Your dark email">
+        <input type="password" id="loginPassword" placeholder="Your secret pass">
+        <div class="form-actions">
+            <button class="auth-btn" id="loginBtn"><i class="fas fa-sign-in-alt"></i> Enter</button>
+            <button class="auth-btn" id="showRegisterFormBtn"><i class="fas fa-user-plus"></i> No account?</button>
+        </div>
+    </div>
+
+    <div class="auth-form" id="registerForm">
+        <button class="close-form" id="closeRegisterForm"><i class="fas fa-times"></i></button>
+        <h2>Register</h2>
+        <input type="email" id="registerEmail" placeholder="Your dark email">
+        <input type="password" id="registerPassword" placeholder="Create secret pass">
+        <input type="password" id="registerPasswordConfirm" placeholder="Confirm secret pass">
+        <div class="form-actions">
+            <button class="auth-btn" id="registerBtn"><i class="fas fa-user-secret"></i> Join</button>
+            <button class="auth-btn" id="showLoginFormBtn"><i class="fas fa-sign-in-alt"></i> Already in?</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <header>
+            <h1>TaskFlow</h1>
+            <div class="clock" id="clock">00:00:00</div>
+            <div class="user-menu" id="userMenu">
+                <div class="auth-buttons" id="authButtons">
+                    <button class="auth-btn" id="showLoginForm">
+                        <i class="fas fa-sign-in-alt"></i> Enter
+                    </button>
+                </div>
+                <img class="user-avatar" id="userAvatar" src="" alt="User" style="display: none;">
+                <div class="dropdown" id="dropdown">
+                    <div class="dropdown-item" id="userName"></div>
+                    <div class="dropdown-divider"></div>
+                    <div class="dropdown-item" id="logoutBtn">
+                        <i class="fas fa-sign-out-alt"></i> Exit
+                    </div>
+                    <div class="dropdown-divider"></div>
+                    <div class="dropdown-item">
+                        <input type="checkbox" id="syncToggle" class="sync-toggle" checked>
+                        <span>Sync</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <div class="task-input-container">
+            <input type="text" class="task-input" id="taskInput" placeholder="What needs to be done?">
+            <button class="add-btn" id="addTaskBtn"><i class="fas fa-plus"></i></button>
+        </div>
+
+        <div class="task-list" id="taskList"></div>
+
+        <div class="sync-status" id="syncStatus">
+            <input type="checkbox" id="syncToggle2" class="sync-toggle" checked>
+            <div class="sync-text" id="syncText">Syncing with cloud...</div>
+        </div>
+
+        <div class="focus-timer" id="focusTimer">
+            <div class="timer-display" id="timerDisplay">25:00</div>
+            <div class="timer-settings">
+                <input type="number" class="timer-input" id="minutesInput" min="1" max="120" value="25">
+                <span>minutes</span>
+            </div>
+            <div class="timer-controls">
+                <button class="timer-btn" id="startTimerBtn">Start</button>
+                <button class="timer-btn" id="pauseTimerBtn" style="display: none;">Pause</button>
+                <button class="timer-btn" id="resetTimerBtn">Reset</button>
+            </div>
+            <div class="progress-bar">
+                <div class="progress" id="progressBar"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="theme-toggle" id="themeToggle">
+        <i class="fas fa-moon" id="themeIcon"></i>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-database-compat.js"></script>
+
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "",
+            databaseURL: "",
+            messagingSenderId: "1234567890", //this shit dosent matter
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.database();
+
+        // DOM elements
+        const taskInput = document.getElementById('taskInput');
+        const addTaskBtn = document.getElementById('addTaskBtn');
+        const taskList = document.getElementById('taskList');
+        const clock = document.getElementById('clock');
+        const showLoginForm = document.getElementById('showLoginForm');
+        const userAvatar = document.getElementById('userAvatar');
+        const userName = document.getElementById('userName');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const authButtons = document.getElementById('authButtons');
+        const dropdown = document.getElementById('dropdown');
+        const userMenu = document.getElementById('userMenu');
+        const syncToggle = document.getElementById('syncToggle');
+        const syncToggle2 = document.getElementById('syncToggle2');
+        const syncText = document.getElementById('syncText');
+        const syncStatus = document.getElementById('syncStatus');
+        const themeToggle = document.getElementById('themeToggle');
+        const themeIcon = document.getElementById('themeIcon');
+        const timerDisplay = document.getElementById('timerDisplay');
+        const startTimerBtn = document.getElementById('startTimerBtn');
+        const pauseTimerBtn = document.getElementById('pauseTimerBtn');
+        const resetTimerBtn = document.getElementById('resetTimerBtn');
+        const progressBar = document.getElementById('progressBar');
+        const focusTimer = document.getElementById('focusTimer');
+        const minutesInput = document.getElementById('minutesInput');
+        const notification = document.getElementById('notification');
+        const overlay = document.getElementById('overlay');
+        
+        // Auth form elements
+        const loginForm = document.getElementById('loginForm');
+        const registerForm = document.getElementById('registerForm');
+        const closeLoginForm = document.getElementById('closeLoginForm');
+        const closeRegisterForm = document.getElementById('closeRegisterForm');
+        const loginBtn = document.getElementById('loginBtn');
+        const registerBtn = document.getElementById('registerBtn');
+        const showRegisterFormBtn = document.getElementById('showRegisterFormBtn');
+        const showLoginFormBtn = document.getElementById('showLoginFormBtn');
+        const loginEmail = document.getElementById('loginEmail');
+        const loginPassword = document.getElementById('loginPassword');
+        const registerEmail = document.getElementById('registerEmail');
+        const registerPassword = document.getElementById('registerPassword');
+        const registerPasswordConfirm = document.getElementById('registerPasswordConfirm');
+
+        // State
+        let tasks = [];
+        let isSyncing = true;
+        let timerInterval;
+        let timerDuration = 25 * 60; // 25 minutes in seconds
+        let timeLeft = timerDuration;
+        let isTimerRunning = false;
+
+        // Theme
+        const currentTheme = localStorage.getItem('theme') || 'dark';
+        document.documentElement.setAttribute('data-theme', currentTheme);
+        themeIcon.className = currentTheme === 'dark' ? 'fas fa-moon' : 'fas fa-sun';
+
+        // Show notification with edgy style
+        function showNotification(message, isError = false) {
+            notification.textContent = message;
+            notification.className = 'notification';
+            
+            if (isError) {
+                notification.classList.add('error');
+                // Add more edgy effects for errors
+                setTimeout(() => {
+                    notification.style.borderColor = 'var(--error)';
+                    notification.style.color = 'var(--error)';
+                }, 500);
+            } else {
+                notification.style.borderColor = 'var(--primary)';
+                notification.style.color = 'var(--primary)';
+            }
+            
+            notification.classList.add('show');
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+                notification.classList.remove('error');
+            }, 3000);
+        }
+
+        // Auth form handling
+        function showForm(form) {
+            overlay.classList.add('active');
+            form.classList.add('active');
+        }
+
+        function hideForms() {
+            overlay.classList.remove('active');
+            loginForm.classList.remove('active');
+            registerForm.classList.remove('active');
+        }
+
+        showLoginForm.addEventListener('click', () => showForm(loginForm));
+        showRegisterFormBtn.addEventListener('click', () => {
+            hideForms();
+            showForm(registerForm);
+        });
+        showLoginFormBtn.addEventListener('click', () => {
+            hideForms();
+            showForm(loginForm);
+        });
+        closeLoginForm.addEventListener('click', hideForms);
+        closeRegisterForm.addEventListener('click', hideForms);
+        overlay.addEventListener('click', hideForms);
+
+        // Clock
+        function updateClock() {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+            
+            // Animate digits
+            const clockHTML = `
+                <span class="clock-digit">${hours}</span>:
+                <span class="clock-digit">${minutes}</span>:
+                <span class="clock-digit">${seconds}</span>
+            `;
+            clock.innerHTML = clockHTML;
+            
+            // Add flip animation to changing digits
+            const digits = clock.querySelectorAll('.clock-digit');
+            digits.forEach((digit, index) => {
+                const currentValue = digit.textContent;
+                const newValue = [hours, minutes, seconds][index];
+                
+                if (currentValue !== newValue) {
+                    digit.classList.add('flip');
+                    setTimeout(() => {
+                        digit.textContent = newValue;
+                        digit.classList.remove('flip');
+                    }, 150);
+                }
+            });
+        }
+
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // Timer
+        function updateTimerDisplay() {
+            const minutes = Math.floor(timeLeft / 60);
+            const seconds = timeLeft % 60;
+            timerDisplay.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            
+            const progress = ((timerDuration - timeLeft) / timerDuration) * 100;
+            progressBar.style.width = `${progress}%`;
+        }
+
+        function startTimer() {
+            if (isTimerRunning) return;
+            
+            isTimerRunning = true;
+            startTimerBtn.style.display = 'none';
+            pauseTimerBtn.style.display = 'block';
+            
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                updateTimerDisplay();
+                
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    isTimerRunning = false;
+                    startTimerBtn.style.display = 'block';
+                    pauseTimerBtn.style.display = 'none';
+                    showNotification('Time is up! The system demands a break.');
+                    // Play a sound or show a more prominent notification
+                }
+            }, 1000);
+        }
+
+        function pauseTimer() {
+            clearInterval(timerInterval);
+            isTimerRunning = false;
+            startTimerBtn.style.display = 'block';
+            pauseTimerBtn.style.display = 'none';
+        }
+
+        function resetTimer() {
+            pauseTimer();
+            timerDuration = parseInt(minutesInput.value) * 60;
+            timeLeft = timerDuration;
+            updateTimerDisplay();
+            progressBar.style.width = '0%';
+        }
+
+        startTimerBtn.addEventListener('click', startTimer);
+        pauseTimerBtn.addEventListener('click', pauseTimer);
+        resetTimerBtn.addEventListener('click', resetTimer);
+
+        minutesInput.addEventListener('change', () => {
+            const minutes = parseInt(minutesInput.value);
+            if (minutes < 1) minutesInput.value = 1;
+            if (minutes > 120) minutesInput.value = 120;
+            if (!isTimerRunning) {
+                resetTimer();
+            }
+        });
+
+        // Theme toggle
+        themeToggle.addEventListener('click', () => {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            themeIcon.className = newTheme === 'dark' ? 'fas fa-moon' : 'fas fa-sun';
+            showNotification(`Switched to ${newTheme} mode`);
+        });
+
+        // Task functions
+        function renderTasks() {
+            taskList.innerHTML = '';
+            
+            if (tasks.length === 0) {
+                taskList.innerHTML = '<p style="text-align: center; color: #888; padding: 2rem;">Your tasks will appear here. Add one above!</p>';
+                return;
+            }
+            
+            // Sort tasks by timestamp (newest first)
+            tasks.sort((a, b) => b.timestamp - a.timestamp);
+            
+            tasks.forEach((task) => {
+                const taskElement = document.createElement('div');
+                taskElement.className = 'task-item';
+                taskElement.innerHTML = `
+                    <input type="checkbox" class="task-checkbox" ${task.done ? 'checked' : ''} data-id="${task.id}">
+                    <div class="task-text ${task.done ? 'completed' : ''}" data-id="${task.id}">${task.text}</div>
+                    <button class="task-delete" data-id="${task.id}"><i class="fas fa-trash"></i></button>
+                `;
+                
+                taskList.appendChild(taskElement);
+                
+                // Add event listeners
+                const checkbox = taskElement.querySelector('.task-checkbox');
+                const deleteBtn = taskElement.querySelector('.task-delete');
+                const taskText = taskElement.querySelector('.task-text');
+                
+                checkbox.addEventListener('change', () => {
+                    task.done = checkbox.checked;
+                    taskText.classList.toggle('completed', task.done);
+                    saveTasks();
+                });
+                
+                taskText.addEventListener('click', () => {
+                    const newText = prompt('Edit task:', task.text);
+                    if (newText !== null && newText.trim() !== '') {
+                        task.text = newText.trim();
+                        taskText.textContent = task.text;
+                        saveTasks();
+                    }
+                });
+                
+                deleteBtn.addEventListener('click', () => {
+                    tasks = tasks.filter(t => t.id !== task.id);
+                    renderTasks();
+                    saveTasks();
+                    showNotification('Task terminated');
+                });
+            });
+        }
+
+        function addTask(text) {
+            if (!text.trim()) {
+                showNotification('Task cannot be empty, agent', true);
+                return;
+            }
+            
+            const newTask = {
+                id: Date.now().toString(),
+                text: text.trim(),
+                done: false,
+                timestamp: Date.now()
+            };
+            
+            tasks.unshift(newTask);
+            renderTasks();
+            saveTasks();
+            taskInput.value = '';
+            showNotification('Task injected');
+        }
+
+        function saveTasks() {
+            if (isSyncing && auth.currentUser) {
+                // Save to Firebase Realtime Database
+                db.ref(`users/${auth.currentUser.uid}/tasks`).set(tasks)
+                .then(() => {
+                    syncText.textContent = 'Synced with shadow cloud';
+                    syncStatus.style.borderColor = 'var(--primary)';
+                    setTimeout(() => {
+                        syncStatus.style.borderColor = 'var(--secondary)';
+                    }, 2000);
+                })
+                .catch(error => {
+                    console.error('Error saving tasks:', error);
+                    syncText.textContent = 'Sync compromised';
+                    syncStatus.style.borderColor = 'var(--error)';
+                    showNotification('System breach detected', true);
+                });
+            } else {
+                // Save to localStorage
+                localStorage.setItem('tasks', JSON.stringify(tasks));
+                syncText.textContent = 'Saved to local cache';
+                syncStatus.style.borderColor = 'var(--secondary)';
+            }
+        }
+
+        function loadTasks() {
+            if (isSyncing && auth.currentUser) {
+                // Load from Firebase Realtime Database
+                db.ref(`users/${auth.currentUser.uid}/tasks`).once('value')
+                .then(snapshot => {
+                    if (snapshot.exists()) {
+                        tasks = Object.values(snapshot.val());
+                        renderTasks();
+                        syncText.textContent = 'Synced with shadow cloud';
+                        showNotification('Tasks decrypted from cloud');
+                    } else {
+                        loadLocalTasks();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading tasks:', error);
+                    loadLocalTasks();
+                    showNotification('Cloud sync failed. System may be compromised.', true);
+                });
+            } else {
+                // Load from localStorage
+                loadLocalTasks();
+            }
+        }
+
+        function loadLocalTasks() {
+            const savedTasks = localStorage.getItem('tasks');
+            if (savedTasks) {
+                tasks = JSON.parse(savedTasks);
+                renderTasks();
+                showNotification('Tasks loaded from local cache');
+            }
+            syncText.textContent = isSyncing ? 'Not authenticated - using local cache' : 'Sync disabled - using local cache';
+        }
+
+        // Authentication
+        function initAuth() {
+            auth.onAuthStateChanged(user => {
+                if (user) {
+                    // User is signed in
+                    authButtons.style.display = 'none';
+                    userAvatar.src = user.photoURL || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(user.displayName || user.email || 'User') + '&background=0a0a0a&color=00ff88';
+                    userAvatar.style.display = 'block';
+                    userName.textContent = user.displayName || user.email || 'Agent';
+                    userName.innerHTML = `<i class="fas fa-user-secret"></i> ${userName.textContent}`;
+                    
+                    if (isSyncing) {
+                        loadTasks();
+                    }
+                    
+                    showNotification(`Access granted, ${userName.textContent}`);
+                } else {
+                    // User is signed out
+                    authButtons.style.display = 'flex';
+                    userAvatar.style.display = 'none';
+                    
+                    if (isSyncing) {
+                        syncText.textContent = 'Not authenticated - using local cache';
+                        loadLocalTasks();
+                    }
+                }
+            });
+        }
+
+        // Login with email/password
+        loginBtn.addEventListener('click', () => {
+            const email = loginEmail.value;
+            const password = loginPassword.value;
+            
+            if (!email || !password) {
+                showNotification('Credentials required for access', true);
+                return;
+            }
+            
+            auth.signInWithEmailAndPassword(email, password)
+                .then(() => {
+                    hideForms();
+                    showNotification('Authentication successful');
+                })
+                .catch(error => {
+                    let errorMessage = 'Access denied';
+                    switch (error.code) {
+                        case 'auth/user-not-found':
+                            errorMessage = 'User not in system';
+                            break;
+                        case 'auth/wrong-password':
+                            errorMessage = 'Invalid credentials';
+                            break;
+                        case 'auth/invalid-email':
+                            errorMessage = 'Invalid identity';
+                            break;
+                        case 'auth/too-many-requests':
+                            errorMessage = 'System locked. Try later.';
+                            break;
+                    }
+                    showNotification(errorMessage, true);
+                });
+        });
+
+        // Register new user
+        registerBtn.addEventListener('click', () => {
+            const email = registerEmail.value;
+            const password = registerPassword.value;
+            const confirmPassword = registerPasswordConfirm.value;
+            
+            if (!email || !password) {
+                showNotification('Credentials required for registration', true);
+                return;
+            }
+            
+            if (password !== confirmPassword) {
+                showNotification('Passwords do not match', true);
+                return;
+            }
+            
+            if (password.length < 6) {
+                showNotification('Password too weak (min 6 chars)', true);
+                return;
+            }
+            
+            auth.createUserWithEmailAndPassword(email, password)
+                .then(() => {
+                    hideForms();
+                    showNotification('Registration complete. Welcome to the system.');
+                })
+                .catch(error => {
+                    let errorMessage = 'Registration failed';
+                    switch (error.code) {
+                        case 'auth/email-already-in-use':
+                            errorMessage = 'Identity already exists';
+                            break;
+                        case 'auth/invalid-email':
+                            errorMessage = 'Invalid identity format';
+                            break;
+                        case 'auth/weak-password':
+                            errorMessage = 'Password too vulnerable';
+                            break;
+                    }
+                    showNotification(errorMessage, true);
+                });
+        });
+
+        logoutBtn.addEventListener('click', () => {
+            auth.signOut();
+            dropdown.classList.remove('active');
+            showNotification('Session terminated');
+        });
+
+        // User menu toggle
+        userAvatar.addEventListener('click', (e) => {
+            e.stopPropagation();
+            dropdown.classList.toggle('active');
+        });
+
+        document.addEventListener('click', () => {
+            dropdown.classList.remove('active');
+        });
+
+        dropdown.addEventListener('click', (e) => {
+            e.stopPropagation();
+        });
+
+        // Sync toggle
+        function updateSyncStatus() {
+            isSyncing = syncToggle.checked && syncToggle2.checked;
+            syncToggle.checked = isSyncing;
+            syncToggle2.checked = isSyncing;
+            
+            if (isSyncing) {
+                syncText.textContent = auth.currentUser ? 'Syncing with shadow cloud...' : 'Not authenticated - using local cache';
+                if (auth.currentUser) {
+                    loadTasks();
+                }
+                showNotification('Cloud sync activated');
+            } else {
+                syncText.textContent = 'Sync disabled - using local cache';
+                showNotification('Local cache only. Cloud sync disabled.');
+            }
+            
+            saveTasks();
+        }
+
+        syncToggle.addEventListener('change', updateSyncStatus);
+        syncToggle2.addEventListener('change', updateSyncStatus);
+
+        // Task input
+        addTaskBtn.addEventListener('click', () => {
+            addTask(taskInput.value);
+        });
+
+        taskInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                addTask(taskInput.value);
+            }
+        });
+
+        // Initialize
+        initAuth();
+        loadTasks();
+        resetTimer();
+    </script>
+</body>
+</html>
